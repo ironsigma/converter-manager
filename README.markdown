@@ -1,6 +1,14 @@
 # Conversion manager.
 
-Your one stop bean conversion.
+## Your one stop bean conversion.
+
+Simple conversion between various types, no need for casting or
+calling different class or methods.
+
+	:::java
+	YourObject yourObj = converterManager.convert(myObject, YourObject.class);
+	HerObject herObj = converterManager.convert(myObject, HerObject.class);
+	HisObject hisObj = converterManager.convert(myObject, HisObject.class);
 
 ## Quick start
 
@@ -44,7 +52,7 @@ the new converter.
 	converterManager.register(new MyConverter());
 
 If you are using Spring you can add a converter manager bean and list
-each one of the converts.
+each one of the converters.
 
 	:::html
 	<bean id="converterManager" class="com.example.app.ConverterManager">
