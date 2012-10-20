@@ -32,7 +32,11 @@ public enum Message {
 	CONVERTER_NOT_ACCESSIBLE,
 	CONV_NULL_TARGET,
 	CONV_NO_CONVERTER,
-	CONV_FAILED;
+	CONV_UNHANDLED_ERROR,
+	CONV_FAILED,
+	CONV_MORE_ARGS,
+	CONV_LESS_ARGS,
+	CONV_ARG_MISMATCH;
 	
 	private static final ResourceBundle RESOURCE_BUNDLE =
 			ResourceBundle.getBundle("com/izylab/izyutils/convertermanager/messages"); //$NON-NLS-1$

@@ -14,17 +14,8 @@
  * limitations under the License.
  * 
  */
-package com.izylab.izyutils.convertermanager.converter;
+package com.izylab.izyutils.convertermanager.classes;
 
-import com.izylab.izyutils.convertermanager.Converter;
-
-public class StringLongConverter {
-	@Converter
-	public static String convert(Long number) {
-		return number.toString();
-	}
-	@Converter
-	public static Long revert(String string) {
-		return Long.parseLong(string);
-	}
+public class MySuperClass {
+	/* empty */
 }

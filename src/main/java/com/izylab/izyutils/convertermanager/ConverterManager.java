@@ -16,6 +16,7 @@
  */
 package com.izylab.izyutils.convertermanager;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
@@ -134,7 +135,7 @@ public class ConverterManager {
 		int registerSize = converterRegister.size();
 		
 		// look for annotated methods
-		for (Method method : converter.getClass().getMethods()) {
+		for (Method method : converter.getClass().getDeclaredMethods()) {
 			// method not annotated, skip it
 			if ( !method.isAnnotationPresent(Converter.class) ) {
 				continue;
@@ -163,12 +164,12 @@ public class ConverterManager {
 			ConverterCommand candidate = converterRegister.get(key);
 			if ( candidate != null ) {
 				// found the same converter already registered
-				if ( candidate.getClass() == converter.getClass() ) {
+				if ( candidate.getConverter().getClass() == converter.getClass() ) {
 					throw new ConverterManagerException(Message.CONVERTER_ALREADY_REGISTERED.getString());
 				}
 				// different converter but already one that's doing the same conversion
 				throw new ConverterManagerException(String.format(Message.CONVERTER_SIMILAR_FOUND.getString(),
-						converter.getClass(), candidate.getClass()));
+						converter.getClass(), candidate.getConverter().getClass()));
 			}
 			// register converter
 			converterRegister.put(key, new ConverterCommand(converter, method));
@@ -245,22 +246,32 @@ public class ConverterManager {
 			return (T) source;
 		}
 		// look for converter
-		ConverterCommand registeredConverter = getConverter(source, targetType);
-		if ( registeredConverter == null ) {
+		ConverterCommand registeredCommand = getConverter(source, targetType);
+		if ( registeredCommand == null ) {
 			// not found
 			throw new ConversionFailedException(String.format(Message.CONV_NO_CONVERTER.getString(),
 					source.getClass(), targetType));
 		}
 		try {
 			// lets convert
-			return (T) registeredConverter.convert(source, args);
-		} catch ( ConversionFailedException  ex ) {
-			// Bubble up conversion errors
+			return (T) registeredCommand.convert(source, args);
+		} catch ( InvocationTargetException  ex ) {
+			// is it a handled exception?
+			if ( ex.getTargetException().getClass() == ConversionFailedException.class ) {
+				throw (ConversionFailedException) ex.getTargetException();
+			}
+			// Unhanddled error in conversion
+			throw new ConversionFailedException(String.format(Message.CONV_UNHANDLED_ERROR.getString(),
+					source.getClass(), targetType, registeredCommand.getConverter().getClass()), ex);
+			
+		// Bubble up conversion errors
+		} catch ( ConversionFailedException ex ) {
 			throw ex;
+			
 		} catch ( Exception ex ) {
 			// Don't know what happened, wrap error
 			throw new ConversionFailedException(String.format(Message.CONV_FAILED.getString(),
-					source.getClass(), targetType, registeredConverter.getClass()), ex);
+					source.getClass(), targetType, registeredCommand.getConverter().getClass()), ex);
 		}
 	}
 	
@@ -298,7 +309,33 @@ public class ConverterManager {
 		}
 		// call the converter method with optional arguments
 		public Object convert(Object source, Object ... args) throws Exception {
+			Class<?>[] paramTypes = method.getParameterTypes();
+			// check for too few args
+			if ( args.length < paramTypes.length - 1) {
+				throw new ConversionFailedException(
+						String.format(Message.CONV_LESS_ARGS.getString(),
+								source.getClass(), method.getReturnType(), converter.getClass()));
+			}
+			// check for too many args
+			if ( args.length > paramTypes.length - 1) {
+				throw new ConversionFailedException(
+						String.format(Message.CONV_MORE_ARGS.getString(),
+								source.getClass(), method.getReturnType(), converter.getClass()));
+			}
+			// check arg types
+			for ( int i = 1 /* 1=first parameter */; i < paramTypes.length; i++ ) {
+				if ( paramTypes[i] != args[i-1].getClass() ) {
+					throw new ConversionFailedException(
+							String.format(Message.CONV_ARG_MISMATCH.getString(),
+									source.getClass(), method.getReturnType(), converter.getClass()));
+				}
+			}
+			// almost certain it is good to call
 			return method.invoke(converter, appendArgs(source, args));
+		}
+		// get converter
+		public Object getConverter() {
+			return converter;
 		}
 		// helper method to append arguments to the source object for invoke method
 		private <T> T[] appendArgs( T object, T[] args) {

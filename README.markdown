@@ -11,7 +11,7 @@ Your one stop bean conversion.
 ### 1. Write a converter
 
 A converter is just a class with one or more methods annotated with 
-@Converter that take an object and return an object of a different type.
+`@Converter` that take an object and return an object of a different type.
 Optionally it can take additional arguments.
 
 	:::java
@@ -48,7 +48,7 @@ each one of the converts.
 
 	:::html
 	<bean id="converterManager" class="com.example.app.ConverterManager">
-		 <property name="converters">
+		<property name="converters">
 	    <list>
 	    	 <bean class="com.example.app.MyConverter" />
 	    </list>
@@ -81,10 +81,10 @@ the `convert` call.
 	converterManager.convert(myObject, TargetType.class, arg1);
 	
 ## To do
-* More unit testing
+* More testing
 
 ## Copyright
-Copyright 2012 Juan D Frias
+* Copyright 2012 Juan D Frias
 
 ## License
-Apache License Version 2.0
+* Apache License Version 2.0
